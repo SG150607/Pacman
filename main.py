@@ -7,7 +7,7 @@ import pygame
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Pacman')
-    size = width, height = 700, 750
+    size = width, height = 700, 875
     screen = pygame.display.set_mode(size)
     screen.fill((0, 0, 0))
 
@@ -17,6 +17,12 @@ if __name__ == '__main__':
     SPEED = 2
 
     SCORE = 0  # счетчик очков
+    BEST_SCORE = int(open('data/best_score', encoding='utf8').read())
+
+    UP_BAR_SIZE = 3 * tile_size
+    DOWN_BAR_SIZE = 2 * tile_size
+
+    font = pygame.font.Font('data/Righteous-Regular.ttf', 20)
 
     '''ЗАГРУЗКИ'''
 
@@ -48,6 +54,18 @@ if __name__ == '__main__':
         else:
             image = pygame.transform.scale(image, (tile_size, tile_size))
         return image
+
+
+    def show_overlay():  # визуалки
+        UP_text = font.render("1UP", True, 'white')
+        screen.blit(UP_text, (50, 8))
+        score_text = font.render(f"{SCORE}", True, 'white')
+        screen.blit(score_text, (50, 38))
+
+        highest_score_text = font.render("HIGH SCORE", True, 'white')
+        screen.blit(highest_score_text, (300, 8))
+        best_score_text = font.render(f"{BEST_SCORE}", True, 'white')
+        screen.blit(best_score_text, (300, 38))
 
 
     '''КЛАССЫ'''
@@ -139,7 +157,7 @@ if __name__ == '__main__':
                         self.turns_allowed[3] = True
 
         def eating(self):
-            global SCORE
+            global SCORE, BEST_SCORE
             mid_x = self.rect.x + self.rect.width // 2
             mid_y = self.rect.y + self.rect.height // 2
             if Level[mid_y // tile_size][mid_x // tile_size] == "+":
@@ -151,6 +169,9 @@ if __name__ == '__main__':
             for point in points:
                 if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
                     points.remove(point)
+
+            if SCORE > BEST_SCORE:  # если набрали рекордное кол-во очков
+                BEST_SCORE = SCORE
 
         def update(self):
             self.animated_object.update()
@@ -216,7 +237,8 @@ if __name__ == '__main__':
     / - порталы(коридор справа и слева карты для перемещения между краями)
     _ - "калитка" для призраков
     " " - пустая клетка
-    (28 в длину и 30 в высоту)
+    "?" - пространство для визуала
+    (28 в длину и 35 в высоту)
     '''
 
     # группы спрайтов
@@ -269,5 +291,8 @@ if __name__ == '__main__':
         all_sprites.draw(screen)
         points.draw(screen)
         player.update()
+        show_overlay()
         pygame.display.flip()
+    with open('data/best_score', "w", encoding='utf8') as file:
+        file.write(str(BEST_SCORE))
     pygame.quit()
