@@ -188,6 +188,9 @@ if __name__ == '__main__':
             for point in points:
                 if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
                     points.remove(point)
+            for bonus in bonuses:
+                if not Level[bonus.rect.y // tile_size][bonus.rect.x // tile_size]:
+                    bonuses.remove(bonus)
 
             if SCORE > BEST_SCORE:  # если набрали рекордное кол-во очков
                 BEST_SCORE = SCORE
@@ -213,8 +216,6 @@ if __name__ == '__main__':
             elif self.bonus_on and not self.bonus_time:
                 self.bonus_on = False
                 self.eaten_ghousts = [False, False, False, False]
-
-            print(self.bonus_on)
 
 
     class Ghoust(pygame.sprite.Sprite):
@@ -243,14 +244,15 @@ if __name__ == '__main__':
             super().__init__(points)
             self.image = load_image('dot.png')
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
-            self.mask = pygame.mask.from_surface(self.image)
 
 
-    class Bonus(Point):
+    class Bonus(pygame.sprite.Sprite):
+        # было бы логичнее наследовать от Point, но хочу чтобы они мигали,
+        # так что пришлось наследовать класс от Sprite и делать отдельную группу
         def __init__(self, pos_x, pos_y):
-            super().__init__(pos_x, pos_y)
+            super().__init__(bonuses)
             self.image = load_image('bonus.png')
-            self.mask = pygame.mask.from_surface(self.image)  # think about remove
+            self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
 
 
     '''
@@ -271,6 +273,7 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
+    bonuses = pygame.sprite.Group()
 
     '''ГЕНЕРАЦИЯ УРОВНЯ'''
 
@@ -300,6 +303,7 @@ if __name__ == '__main__':
     running = True
     all_sprites.draw(screen)
     points.draw(screen)
+    bonuses.draw(screen)
     player.update()
     show_overlay()
     pygame.display.flip()
@@ -322,6 +326,8 @@ if __name__ == '__main__':
                     player.move(4)
         all_sprites.draw(screen)
         points.draw(screen)
+        if pygame.time.get_ticks() % 2000 < 1000:
+            bonuses.draw(screen)
         player.update()
         show_overlay()
         pygame.display.flip()
