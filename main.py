@@ -12,6 +12,7 @@ if __name__ == '__main__':
     screen.fill((0, 0, 0))
 
     tile_size = 25  # размер объекта на поле
+    HP_size = tile_size + 8  # размер иконок хп пакмена
     clock = pygame.time.Clock()
     FPS = 50
     SPEED = 2
@@ -67,8 +68,15 @@ if __name__ == '__main__':
         best_score_text = font.render(f"{BEST_SCORE}", True, 'white')
         screen.blit(best_score_text, (300, 38))
 
+        if player.bonus_on:  # отображаем кружочек если действует бонус (пока для самопроверки, тк нет врагов)
+            pygame.draw.circle(screen, pygame.Color('yellow'), (35, 51), 8)
 
-    '''КЛАССЫ'''
+        for i in range(player.lives - 1):  # отображается на 1 жизнь меньше
+            screen.blit(load_image('pacman.png', (HP_size * 8, HP_size)).subsurface(
+                pygame.Rect((4 * HP_size, 0), (HP_size, HP_size))),
+                (30 + i * HP_size, height - 1.5 * HP_size))
+
+            '''КЛАССЫ'''
 
 
     class AnimatedSprite(pygame.sprite.Sprite):
@@ -105,6 +113,13 @@ if __name__ == '__main__':
             self.move_var = [(0, SPEED), (0, -SPEED), (-SPEED, 0), (SPEED, 0)]
 
             self.turns_allowed = [False, False, False, False]
+
+            self.bonus_on = False
+            self.bonus_time = 0
+            self.eaten_ghousts = [False, False, False, False]
+            # чтоб когда призраки возраждались их нельзя было снова съесть
+
+            self.lives = 3
 
         def move(self, direction):  # направление движения
             self.direction = direction - 1
@@ -166,6 +181,10 @@ if __name__ == '__main__':
             if Level[mid_y // tile_size][mid_x // tile_size] == "0":
                 Level[mid_y // tile_size][mid_x // tile_size] = ""
                 SCORE += 50
+                self.bonus_on = True
+                self.bonus_time = 1
+                self.eaten_ghousts = [False, False, False, False]
+
             for point in points:
                 if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
                     points.remove(point)
@@ -189,6 +208,13 @@ if __name__ == '__main__':
                 self.animated_object.rect.x = width - 3
 
             self.eating()
+            if self.bonus_on and self.bonus_time:
+                self.bonus_time = (self.bonus_time + 1) % (10 * FPS + 1)  # бонус действует 10 секунд
+            elif self.bonus_on and not self.bonus_time:
+                self.bonus_on = False
+                self.eaten_ghousts = [False, False, False, False]
+
+            print(self.bonus_on)
 
 
     class Ghoust(pygame.sprite.Sprite):
@@ -272,6 +298,12 @@ if __name__ == '__main__':
     Level = load_level('map.txt')
 
     running = True
+    all_sprites.draw(screen)
+    points.draw(screen)
+    player.update()
+    show_overlay()
+    pygame.display.flip()
+    pygame.time.wait(3000)  # ждем 3 секунды перед началом игры
 
     while running:
         clock.tick(FPS)
