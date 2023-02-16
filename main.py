@@ -218,9 +218,110 @@ if __name__ == '__main__':
                 self.eaten_ghousts = [False, False, False, False]
 
 
-    class Ghoust(pygame.sprite.Sprite):
-        # 0 - idle; 1 - down; 2 - up; 3 - left; 4 - right
-        ...
+    class Ghost:
+        def __init__(self, image, pos_x, pos_y, start_direction):
+            self.image = load_image(image, (tile_size * 10, tile_size))
+            self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
+            self.rect.width = tile_size
+
+            # 0 - idle; 1 - down; 2 - up; 3 - left; 4 - right
+            self.animated_object = AnimatedSprite(self.image, 10, 1, tile_size * pos_x, tile_size * pos_y)
+            self.animated_object.start_frame = start_direction * 2
+
+            self.direction = start_direction
+            self.move_var = [(0, SPEED), (0, -SPEED), (-SPEED, 0), (SPEED, 0)]
+
+            self.turns_allowed = [False, False, False, False]
+
+        def check_position(self):  # проверка возможности движения
+            # 0 - down; 1 - up; 2 - left; 3 - right
+            self.turns_allowed = [False, False, False, False]
+
+            pos_x = self.rect.x + self.rect.width // 2
+            pos_y = self.rect.y + self.rect.height // 2
+            pogr = 13
+
+            '''НЕ СТЕНА'''
+            if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                self.turns_allowed[0] = True
+
+            if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                self.turns_allowed[1] = True
+
+            if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
+                self.turns_allowed[2] = True
+
+            if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
+                self.turns_allowed[3] = True
+
+            '''ПО ЦЕНТРУ'''
+            if self.direction == 0 or self.direction == 1:
+                if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                    if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                        self.turns_allowed[0] = True
+                    if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                        self.turns_allowed[1] = True
+                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                    if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
+                        self.turns_allowed[2] = True
+                    if Level[pos_y // tile_size][(pos_x + tile_size) // tile_size] not in ['#', '_']:
+                        self.turns_allowed[3] = True
+
+            if self.direction == 2 or self.direction == 3:
+                if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                    if Level[(pos_y + tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                        self.turns_allowed[0] = True
+                    if Level[(pos_y - tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:  # !
+                        self.turns_allowed[1] = True
+                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                    if Level[pos_y // tile_size][(pos_x - pogr) // tile_size] not in ['#', '_']:
+                        self.turns_allowed[2] = True
+                    if Level[pos_y // tile_size][(pos_x + pogr) // tile_size] not in ['#', '_']:
+                        self.turns_allowed[3] = True
+
+        def turn_blue(self):
+            ...
+
+        def dead(self):
+            ...
+
+        def update(self):
+            self.animated_object.update()
+            self.check_position()
+            # движение
+            ...
+
+
+    class VioletGhost(Ghost):
+        def __init__(self, pos_x, pos_y):
+            super().__init__('ghost_violet.png', pos_x, pos_y, 3)
+
+        def move(self):
+            ...
+
+
+    class PinkGhost(Ghost):
+        def __init__(self, pos_x, pos_y):
+            super().__init__('ghost_pink.png', pos_x, pos_y, 1)
+
+        def move(self):
+            ...
+
+
+    class OrangeGhost(Ghost):
+        def __init__(self, pos_x, pos_y):
+            super().__init__('ghost_orange.png', pos_x, pos_y, 2)
+
+        def move(self):
+            ...
+
+
+    class BlueGhost(Ghost):
+        def __init__(self, pos_x, pos_y):
+            super().__init__('ghost_blue.png', pos_x, pos_y, 2)
+
+        def move(self):
+            ...
 
 
     class Wall(pygame.sprite.Sprite):
@@ -259,6 +360,10 @@ if __name__ == '__main__':
     ---КАРТА---:
     
     P - игрок
+    V - фиолетовый призрак
+    I - розовый призрак
+    B - синий призрак
+    O - оранжевый призрак
     # - стены
     + - точки
     0 - бонус(для поедания врагов)
@@ -274,12 +379,13 @@ if __name__ == '__main__':
     walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
     bonuses = pygame.sprite.Group()
+    ghosts = pygame.sprite.Group()
 
     '''ГЕНЕРАЦИЯ УРОВНЯ'''
 
 
     def generate_level(level):
-        new_player, x, y = None, None, None
+        new_player, x, y, violet_ghost, pink_ghost, blue_ghost, orange_ghost = None, None, None, None, None, None, None
         for y in range(len(level)):
             for x in range(len(level[y])):
                 if level[y][x] == '#':
@@ -293,19 +399,40 @@ if __name__ == '__main__':
                 elif level[y][x] == 'P':
                     new_player = Player(x, y)
                     level[y][x] = ''
+                elif level[y][x] == 'V':
+                    violet_ghost = VioletGhost(x, y)
+                    level[y][x] = ''
+                elif level[y][x] == 'I':
+                    pink_ghost = PinkGhost(x, y)
+                    level[y][x] = ''
+                elif level[y][x] == 'B':
+                    blue_ghost = BlueGhost(x, y)
+                    level[y][x] = ''
+                elif level[y][x] == 'O':
+                    orange_ghost = OrangeGhost(x, y)
+                    level[y][x] = ''
         # вернем игрока, а также размер поля в клетках
-        return new_player, x, y
+        return new_player, x, y, violet_ghost, pink_ghost, blue_ghost, orange_ghost
 
 
-    player, level_x, level_y = generate_level(load_level('map.txt'))
+    player, level_x, level_y, violet_ghost, pink_ghost, blue_ghost, orange_ghost = generate_level(load_level('map.txt'))
     Level = load_level('map.txt')
 
     running = True
     all_sprites.draw(screen)
+
     points.draw(screen)
     bonuses.draw(screen)
+
     player.update()
+
+    violet_ghost.update()
+    pink_ghost.update()
+    blue_ghost.update()
+    orange_ghost.update()
+
     show_overlay()
+
     pygame.display.flip()
     pygame.time.wait(3000)  # ждем 3 секунды перед началом игры
 
@@ -329,6 +456,10 @@ if __name__ == '__main__':
         if pygame.time.get_ticks() % 2000 < 1000:
             bonuses.draw(screen)
         player.update()
+        violet_ghost.update()
+        pink_ghost.update()
+        blue_ghost.update()
+        orange_ghost.update()
         show_overlay()
         pygame.display.flip()
     with open('data/best_score', "w", encoding='utf8') as file:
