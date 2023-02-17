@@ -72,11 +72,12 @@ if __name__ == '__main__':
             pygame.draw.circle(screen, pygame.Color('yellow'), (35, 51), 8)
 
         for i in range(player.lives - 1):  # отображается на 1 жизнь меньше
-            screen.blit(load_image('pacman.png', (HP_size * 8, HP_size)).subsurface(
+            screen.blit(load_image('characters/pacman.png', (HP_size * 8, HP_size)).subsurface(
                 pygame.Rect((4 * HP_size, 0), (HP_size, HP_size))),
                 (30 + i * HP_size, height - 1.5 * HP_size))
 
-            '''КЛАССЫ'''
+
+    '''КЛАССЫ'''
 
 
     class AnimatedSprite(pygame.sprite.Sprite):
@@ -103,7 +104,7 @@ if __name__ == '__main__':
 
     class Player:
         def __init__(self, pos_x, pos_y):
-            self.image = load_image('pacman.png', (tile_size * 8, tile_size))
+            self.image = load_image('characters/pacman.png', (tile_size * 8, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
 
         def move(self, direction):  # направление движения
             self.direction = direction - 1
-            self.animated_object.start_frame = self.direction
+            self.animated_object.start_frame = self.direction * 2
 
         def check_position(self):  # проверка возможности движения
             # 0 - down; 1 - up; 2 - left; 3 - right
@@ -220,12 +221,12 @@ if __name__ == '__main__':
 
     class Ghost:
         def __init__(self, image, pos_x, pos_y, start_direction):
-            self.image = load_image(image, (tile_size * 10, tile_size))
+            self.image = load_image(image, (tile_size * 11, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
 
             # 0 - idle; 1 - down; 2 - up; 3 - left; 4 - right
-            self.animated_object = AnimatedSprite(self.image, 10, 1, tile_size * pos_x, tile_size * pos_y)
+            self.animated_object = AnimatedSprite(self.image, 11, 1, tile_size * pos_x, tile_size * pos_y)
             self.animated_object.start_frame = start_direction * 2
 
             self.direction = start_direction
@@ -294,7 +295,7 @@ if __name__ == '__main__':
 
     class VioletGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('ghost_violet.png', pos_x, pos_y, 3)
+            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3)
 
         def move(self):
             ...
@@ -302,7 +303,7 @@ if __name__ == '__main__':
 
     class PinkGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('ghost_pink.png', pos_x, pos_y, 1)
+            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1)
 
         def move(self):
             ...
@@ -310,7 +311,7 @@ if __name__ == '__main__':
 
     class OrangeGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('ghost_orange.png', pos_x, pos_y, 2)
+            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2)
 
         def move(self):
             ...
@@ -318,7 +319,7 @@ if __name__ == '__main__':
 
     class BlueGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('ghost_blue.png', pos_x, pos_y, 2)
+            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2)
 
         def move(self):
             ...
@@ -327,7 +328,7 @@ if __name__ == '__main__':
     class Wall(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y, size_=(tile_size, tile_size)):
             super().__init__(walls, all_sprites)
-            self.image = load_image('wall.png')
+            self.image = load_image('field_builder/wall.png')
             self.rect = self.image.get_rect().move(size_[0] * pos_x, size_[1] * pos_y)
             self.mask = pygame.mask.from_surface(self.image)
 
@@ -335,7 +336,7 @@ if __name__ == '__main__':
     class Gate(Wall):
         def __init__(self, pos_x, pos_y):
             super().__init__(pos_x, pos_y)
-            self.image = load_image('door.png')
+            self.image = load_image('field_builder/door.png')
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.mask = pygame.mask.from_surface(self.image)  # think about remove
 
@@ -343,7 +344,7 @@ if __name__ == '__main__':
     class Point(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y):
             super().__init__(points)
-            self.image = load_image('dot.png')
+            self.image = load_image('field_builder/dot.png')
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
 
 
@@ -352,7 +353,7 @@ if __name__ == '__main__':
         # так что пришлось наследовать класс от Sprite и делать отдельную группу
         def __init__(self, pos_x, pos_y):
             super().__init__(bonuses)
-            self.image = load_image('bonus.png')
+            self.image = load_image('field_builder/bonus.png')
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
 
 
@@ -453,7 +454,7 @@ if __name__ == '__main__':
                     player.move(4)
         all_sprites.draw(screen)
         points.draw(screen)
-        if pygame.time.get_ticks() % 2000 < 1000:
+        if pygame.time.get_ticks() % 1000 < 500:
             bonuses.draw(screen)
         player.update()
         violet_ghost.update()
