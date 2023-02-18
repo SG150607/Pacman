@@ -135,64 +135,69 @@ if __name__ == '__main__':
             pos_y = self.rect.y + self.rect.height // 2
             pogr = 13
 
-            '''НЕ СТЕНА'''
-            if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                self.turns_allowed[0] = True
+            if pos_x // tile_size < 27:
+                '''НЕ СТЕНА'''
+                if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                    self.turns_allowed[0] = True
 
-            if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                self.turns_allowed[1] = True
+                if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                    self.turns_allowed[1] = True
 
-            if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
+                if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
+                    self.turns_allowed[2] = True
+
+                if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
+                    self.turns_allowed[3] = True
+
+                '''ПО ЦЕНТРУ'''
+                if self.direction == 0 or self.direction == 1:
+                    if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                        if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[0] = True
+                        if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[1] = True
+                    if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                        if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[2] = True
+                        if Level[pos_y // tile_size][(pos_x + tile_size) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[3] = True
+
+                if self.direction == 2 or self.direction == 3:
+                    if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                        if Level[(pos_y + tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[0] = True
+                        if Level[(pos_y - tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:  # !
+                            self.turns_allowed[1] = True
+                    if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                        if Level[pos_y // tile_size][(pos_x - pogr) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[2] = True
+                        if Level[pos_y // tile_size][(pos_x + pogr) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[3] = True
+            else:
                 self.turns_allowed[2] = True
-
-            if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
                 self.turns_allowed[3] = True
-
-            '''ПО ЦЕНТРУ'''
-            if self.direction == 0 or self.direction == 1:
-                if 9 <= pos_x % tile_size <= 15:  # почти в центре
-                    if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[0] = True
-                    if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[1] = True
-                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
-                    if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[2] = True
-                    if Level[pos_y // tile_size][(pos_x + tile_size) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[3] = True
-
-            if self.direction == 2 or self.direction == 3:
-                if 9 <= pos_x % tile_size <= 15:  # почти в центре
-                    if Level[(pos_y + tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[0] = True
-                    if Level[(pos_y - tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:  # !
-                        self.turns_allowed[1] = True
-                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
-                    if Level[pos_y // tile_size][(pos_x - pogr) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[2] = True
-                    if Level[pos_y // tile_size][(pos_x + pogr) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[3] = True
 
         def eating(self):
             global SCORE, BEST_SCORE
             mid_x = self.rect.x + self.rect.width // 2
             mid_y = self.rect.y + self.rect.height // 2
-            if Level[mid_y // tile_size][mid_x // tile_size] == "+":
-                Level[mid_y // tile_size][mid_x // tile_size] = ""
-                SCORE += 10
-            if Level[mid_y // tile_size][mid_x // tile_size] == "0":
-                Level[mid_y // tile_size][mid_x // tile_size] = ""
-                SCORE += 50
-                self.bonus_on = True
-                self.bonus_time = 1
-                self.eaten_ghousts = [False, False, False, False]
+            if -self.rect.width < mid_x < width:  # если игрок в пределах поля
+                if Level[mid_y // tile_size][mid_x // tile_size] == "+":
+                    Level[mid_y // tile_size][mid_x // tile_size] = ""
+                    SCORE += 10
+                if Level[mid_y // tile_size][mid_x // tile_size] == "0":
+                    Level[mid_y // tile_size][mid_x // tile_size] = ""
+                    SCORE += 50
+                    self.bonus_on = True
+                    self.bonus_time = 1
+                    self.eaten_ghousts = [False, False, False, False]
 
-            for point in points:
-                if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
-                    points.remove(point)
-            for bonus in bonuses:
-                if not Level[bonus.rect.y // tile_size][bonus.rect.x // tile_size]:
-                    bonuses.remove(bonus)
+                for point in points:
+                    if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
+                        points.remove(point)
+                for bonus in bonuses:
+                    if not Level[bonus.rect.y // tile_size][bonus.rect.x // tile_size]:
+                        bonuses.remove(bonus)
 
             if SCORE > BEST_SCORE:  # если набрали рекордное кол-во очков
                 BEST_SCORE = SCORE
@@ -221,7 +226,7 @@ if __name__ == '__main__':
 
 
     class Ghost:
-        def __init__(self, image, pos_x, pos_y, start_direction, target, inbox, speed):
+        def __init__(self, image, pos_x, pos_y, start_direction, inbox, speed):
             self.image = load_image(image, (tile_size * 11, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
@@ -236,7 +241,7 @@ if __name__ == '__main__':
             self.turns_allowed = [False, False, False, False]
             self.turns_allowed[start_direction] = True
 
-            self.target = target  # target = None (просто мы еще не инициализировали игрока, так что...<))
+            self.target = None
 
             self.alive = True
             self.inbox = inbox
@@ -249,60 +254,64 @@ if __name__ == '__main__':
             pos_y = self.rect.y + self.rect.height // 2
             pogr = 13
 
-            '''НЕ СТЕНА'''
-            if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                self.turns_allowed[0] = True
-            elif self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and \
-                    not self.alive:
-                self.turns_allowed[0] = True  # когда возвращаются на 'спавн' после смерти
+            if pos_x // tile_size < 27:
+                '''НЕ СТЕНА'''
+                if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                    self.turns_allowed[0] = True
+                elif self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and \
+                        not self.alive:
+                    self.turns_allowed[0] = True  # когда возвращаются домой после смерти
 
-            if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                self.turns_allowed[1] = True
-            elif self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and self.inbox:
-                self.turns_allowed[1] = True  # когда вылезают из коробки
+                if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                    self.turns_allowed[1] = True
+                elif self.direction == 1 and Level[(pos_y - pogr) // tile_size][
+                    pos_x // tile_size] == '_' and self.inbox:
+                    self.turns_allowed[1] = True  # когда вылезают из коробки
 
-            if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
+                if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
+                    self.turns_allowed[2] = True
+
+                if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
+                    self.turns_allowed[3] = True
+
+                '''ПО ЦЕНТРУ'''
+                if self.direction == 0 or self.direction == 1:
+                    if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                        if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[0] = True
+                        elif Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and not self.alive:
+                            self.turns_allowed[0] = True
+                        if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[1] = True
+                        elif Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and self.inbox:
+                            self.turns_allowed[1] = True
+                    if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                        if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[2] = True
+                        if Level[pos_y // tile_size][(pos_x + tile_size) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[3] = True
+
+                if self.direction == 2 or self.direction == 3:
+                    if 9 <= pos_x % tile_size <= 15:  # почти в центре
+                        if Level[(pos_y + tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[0] = True
+                        if Level[(pos_y - tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
+                            self.turns_allowed[1] = True
+                    if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
+                        if Level[pos_y // tile_size][(pos_x - pogr) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[2] = True
+                        if Level[pos_y // tile_size][(pos_x + pogr) // tile_size] not in ['#', '_']:
+                            self.turns_allowed[3] = True
+            else:
                 self.turns_allowed[2] = True
-
-            if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
                 self.turns_allowed[3] = True
 
-            '''ПО ЦЕНТРУ'''
-            if self.direction == 0 or self.direction == 1:
-                if 9 <= pos_x % tile_size <= 15:  # почти в центре
-                    if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[0] = True
-                    elif Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and not self.alive:
-                        self.turns_allowed[0] = True
-                    if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[1] = True
-                    elif Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and self.inbox:
-                        self.turns_allowed[1] = True
-                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
-                    if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[2] = True
-                    if Level[pos_y // tile_size][(pos_x + tile_size) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[3] = True
-
-            if self.direction == 2 or self.direction == 3:
-                if 9 <= pos_x % tile_size <= 15:  # почти в центре
-                    if Level[(pos_y + tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[0] = True
-                    if Level[(pos_y - tile_size) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                        self.turns_allowed[1] = True
-                if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
-                    if Level[pos_y // tile_size][(pos_x - pogr) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[2] = True
-                    if Level[pos_y // tile_size][(pos_x + pogr) // tile_size] not in ['#', '_']:
-                        self.turns_allowed[3] = True
-
+            # определяем inbox
             if gate.rect.x - 4 * tile_size < self.rect.x < gate.rect.x + 3 * tile_size and \
                     gate.rect.y - 4 * tile_size < self.rect.y < gate.rect.y:
                 self.inbox = True
-                self.target = gate
             else:
                 self.inbox = False
-                self.target = player
 
         def dead(self):
             self.animated_object.start_frame = ...
@@ -318,27 +327,30 @@ if __name__ == '__main__':
         def escape_box(self):
             pass
 
-        def update(self):
-            if player.bonus_on and self.alive:
-                self.animated_object.start_frame = 9  # под бафом
-            else:
-                self.animated_object.start_frame = self.direction * 2
-
-            if self.inbox:  # определяем цель
+        def get_target(self):  # определяем цель
+            if self.inbox:  # если в коробке, цель - выбраться -> target = gate
                 self.target = gate
-            else:
+            elif not self.alive:  # если съедены, цель - вернуться домой -> target = gate
+                self.target = gate
+            else:  # если мы вне коробки, цель - съесть игрока -> target = player
                 self.target = player
 
-            self.animated_object.update()
-            if self.alive and player.bonus_on:
-                self.escape_direction()
-            else:
-                self.check_position()
+        def update(self):
+            self.check_position()
+            self.get_target()
 
-            if not self.turns_allowed[self.direction]:
+            if self.alive and player.bonus_on:  # направление движения и выбор спрайта
+                self.escape_direction()
+            elif not self.turns_allowed[self.direction] or (self.turns_allowed.count(True) > 1 and not self.inbox):
                 # дошли до стены / идея: когда есть несколько вариантов направления и призрак НЕ в коробке
                 self.choose_direction()
+
+            if self.alive and player.bonus_on:  # картинка призрака
+                self.animated_object.start_frame = 9  # под бафом
+            else:
                 self.animated_object.start_frame = (self.direction + 1) * 2  # потому что 0 - idle
+
+            self.animated_object.update()
 
             for i in range(4):  # движение
                 if self.direction == i and self.turns_allowed[i]:
@@ -356,11 +368,10 @@ if __name__ == '__main__':
     class VioletGhost(Ghost):
         # предпочитает преследование игрока
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, None, False, SPEED + 0.3)
+            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3)
             self.turns = [3, 1, 0, 2]
 
         def choose_direction(self):
-            print(self.__class__, self.turns_allowed, self.direction)
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 8 and (
@@ -410,19 +421,49 @@ if __name__ == '__main__':
                             break
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
-            print(self.__class__, self.direction)
 
         def escape_direction(self):
-            pass
+            # 0 - down; 1 - up; 2 - left; 3 - right
+            if self.turns_allowed.count(True) > 1:
+                for id in self.turns:
+                    if self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
+                            self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
+                            self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
+                            self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
+                            self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
+                        self.direction = 2
+                        break
+            elif self.turns_allowed.count(True) == 1:
+                self.direction = self.turns_allowed.index(True)
 
 
     class PinkGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, None, True, SPEED - 0.3)
+            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3)
             self.turns = [2, 1, 0, 3]
 
         def choose_direction(self):
-            # print(self.__class__, self.turns_allowed, self.direction)
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 7 and (
@@ -472,19 +513,49 @@ if __name__ == '__main__':
                             break
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
-            # print(self.__class__, self.direction)
 
         def escape_direction(self):
-            pass
+            # 0 - down; 1 - up; 2 - left; 3 - right
+            if self.turns_allowed.count(True) > 1:
+                for id in self.turns:
+                    if self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
+                            self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
+                            self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
+                            self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
+                            self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
+                        self.direction = 3
+                        break
+            elif self.turns_allowed.count(True) == 1:
+                self.direction = self.turns_allowed.index(True)
 
 
     class OrangeGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, None, True, SPEED)
+            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED)
             self.turns = [0, 2, 1, 3]
 
         def choose_direction(self):
-            # print(self.__class__, self.turns_allowed, self.direction)
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 7 and (
@@ -534,19 +605,49 @@ if __name__ == '__main__':
                             break
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
-            # print(self.__class__, self.direction)
 
         def escape_direction(self):
-            pass
+            # 0 - down; 1 - up; 2 - left; 3 - right
+            if self.turns_allowed.count(True) > 1:
+                for id in self.turns:
+                    if self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
+                            self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
+                            self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
+                            self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
+                            self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
+                        self.direction = 3
+                        break
+            elif self.turns_allowed.count(True) == 1:
+                self.direction = self.turns_allowed.index(True)
 
 
     class BlueGhost(Ghost):
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, None, True, SPEED)
+            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED)
             self.turns = [3, 0, 2, 1]
 
         def choose_direction(self):
-            # print(self.__class__, self.turns_allowed, self.direction)
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 5 and (
@@ -596,10 +697,41 @@ if __name__ == '__main__':
                             break
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
-            # print(self.__class__, self.direction)
 
         def escape_direction(self):
-            pass
+            # 0 - down; 1 - up; 2 - left; 3 - right
+            if self.turns_allowed.count(True) > 1:
+                for id in self.turns:
+                    if self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
+                            self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
+                            self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
+                            self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
+                            self.direction != 3:
+                        self.direction = 2
+                        break
+                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
+                        self.direction = 3
+                        break
+                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
+                        self.direction = 0
+                        break
+                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
+                        self.direction = 1
+                        break
+                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
+                        self.direction = 2
+                        break
+            elif self.turns_allowed.count(True) == 1:
+                self.direction = self.turns_allowed.index(True)
 
 
     class Wall(pygame.sprite.Sprite):
