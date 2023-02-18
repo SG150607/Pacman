@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
             pos_x = self.rect.x + self.rect.width // 2
             pos_y = self.rect.y + self.rect.height // 2
-            pogr = 13
+            pogr = tile_size // 2 + 1
 
             if pos_x // tile_size < 27:
                 '''НЕ СТЕНА'''
@@ -226,7 +226,7 @@ if __name__ == '__main__':
 
 
     class Ghost:
-        def __init__(self, image, pos_x, pos_y, start_direction, inbox, speed):
+        def __init__(self, image, pos_x, pos_y, start_direction, inbox, speed, escape_con):
             self.image = load_image(image, (tile_size * 11, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
@@ -236,7 +236,8 @@ if __name__ == '__main__':
             self.animated_object.start_frame = start_direction * 2
 
             self.direction = start_direction
-            self.move_var = [(0, speed), (0, -speed), (-speed, 0), (speed, 0)]
+            self.speed = [speed, speed + 5]
+            self.move_var = [(0, self.speed[0]), (0, -self.speed[0]), (-self.speed[0], 0), (self.speed[0], 0)]
 
             self.turns_allowed = [False, False, False, False]
             self.turns_allowed[start_direction] = True
@@ -245,32 +246,24 @@ if __name__ == '__main__':
 
             self.alive = True
             self.inbox = inbox
+            self.escape_con = escape_con
 
-        def check_position(self):  # проверка возможности движения
+        def check_position(self):  # проверка возможности движения + определяем inbox
             # 0 - down; 1 - up; 2 - left; 3 - right
             self.turns_allowed = [False, False, False, False]
 
             pos_x = self.rect.x + self.rect.width // 2
             pos_y = self.rect.y + self.rect.height // 2
-            pogr = 13
+            pogr = tile_size // 2 + 1
 
             if pos_x // tile_size < 27:
                 '''НЕ СТЕНА'''
                 if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
                     self.turns_allowed[0] = True
-                elif self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and \
-                        not self.alive:
-                    self.turns_allowed[0] = True  # когда возвращаются домой после смерти
-
                 if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
                     self.turns_allowed[1] = True
-                elif self.direction == 1 and Level[(pos_y - pogr) // tile_size][
-                    pos_x // tile_size] == '_' and self.inbox:
-                    self.turns_allowed[1] = True  # когда вылезают из коробки
-
                 if self.direction == 2 and Level[pos_y // tile_size][(pos_x + pogr) // tile_size - 1] not in ['#', '_']:
                     self.turns_allowed[2] = True
-
                 if self.direction == 3 and Level[pos_y // tile_size][(pos_x - pogr) // tile_size + 1] not in ['#', '_']:
                     self.turns_allowed[3] = True
 
@@ -279,11 +272,7 @@ if __name__ == '__main__':
                     if 9 <= pos_x % tile_size <= 15:  # почти в центре
                         if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
                             self.turns_allowed[0] = True
-                        elif Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and not self.alive:
-                            self.turns_allowed[0] = True
                         if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] not in ['#', '_']:
-                            self.turns_allowed[1] = True
-                        elif Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and self.inbox:
                             self.turns_allowed[1] = True
                     if 9 <= pos_y % tile_size <= 15:  # между КВАДРАТАМИ
                         if Level[pos_y // tile_size][(pos_x - tile_size) // tile_size] not in ['#', '_']:
@@ -308,24 +297,63 @@ if __name__ == '__main__':
 
             # определяем inbox
             if gate.rect.x - 4 * tile_size < self.rect.x < gate.rect.x + 3 * tile_size and \
-                    gate.rect.y - 4 * tile_size < self.rect.y < gate.rect.y:
+                    gate.rect.y + 4 * tile_size > self.rect.y > gate.rect.y - 1:
                 self.inbox = True
             else:
                 self.inbox = False
-
-        def dead(self):
-            self.animated_object.start_frame = ...
 
         def choose_direction(self):  # у каждого призрака отдельный класс и свой тип движения
             # считаю расстояние по X и Y
             # хотя можно было бы и через прямоугольный треугольник и теорему Пифагора рассчитать расстояние
             pass
 
-        def escape_direction(self):  # когда герой находится под бафом
-            pass
+        def flee_direction(self):  # когда герой находится под бафом
+            pass  # у каждого призрака свой тип движения
 
-        def escape_box(self):
-            pass
+        def escape_box(self):  # выбираемся из коробки
+            # дополнительные проверки
+            pos_x = self.rect.x + self.rect.width // 2
+            pos_y = self.rect.y + self.rect.height // 2
+            pogr = tile_size // 2 + 1
+
+            if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and \
+                    self.inbox:
+                self.turns_allowed[1] = True  # когда вылезают из коробки
+
+            # движение
+            pogr = 5
+            # если почти в центре, то не двигаемся
+            if abs(self.rect.x - gate.rect.x) > pogr:
+                if self.rect.x < gate.rect.x and self.turns_allowed[3]:
+                    self.direction = 3
+                elif self.rect.x > gate.rect.x and self.turns_allowed[2]:
+                    self.direction = 2
+            elif self.rect.y >= gate.rect.y and self.turns_allowed[1]:
+                self.direction = 1
+
+        def get_in_box(self):  # добираемся до коробки
+            # дополнительные проверки
+            pos_x = self.rect.x + self.rect.width // 2
+            pos_y = self.rect.y + self.rect.height // 2
+            pogr = tile_size // 2 + 1
+
+            if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and \
+                    not self.alive:
+                self.turns_allowed[0] = True  # когда возвращаются домой после смерти
+
+            # движение
+            pogr = 5
+
+            # если почти в центре, то не двигаемся
+            if abs(self.rect.x - gate.rect.x) > pogr:
+                if self.rect.x < gate.rect.x and self.turns_allowed[3]:
+                    self.direction = 3
+                elif self.rect.x > gate.rect.x and self.turns_allowed[2]:
+                    self.direction = 2
+            elif self.rect.y > gate.rect.y and self.turns_allowed[1]:
+                self.direction = 1
+            elif self.rect.y <= gate.rect.y and self.turns_allowed[0]:
+                self.direction = 0
 
         def get_target(self):  # определяем цель
             if self.inbox:  # если в коробке, цель - выбраться -> target = gate
@@ -339,18 +367,33 @@ if __name__ == '__main__':
             self.check_position()
             self.get_target()
 
-            if self.alive and player.bonus_on:  # направление движения и выбор спрайта
-                self.escape_direction()
+            if not self.alive:  # если призрак мертв
+                self.get_in_box()
+            elif self.alive and player.bonus_on and not self.inbox:  # направление движения и выбор спрайта
+                self.flee_direction()
+            elif self.alive and self.inbox and SCORE >= self.escape_con:  # если в коробке и нужно выбраться
+                self.escape_box()
             elif not self.turns_allowed[self.direction] or (self.turns_allowed.count(True) > 1 and not self.inbox):
                 # дошли до стены / идея: когда есть несколько вариантов направления и призрак НЕ в коробке
                 self.choose_direction()
 
-            if self.alive and player.bonus_on:  # картинка призрака
+            if not self.alive:  # картинка призрака
+                self.animated_object.start_frame = ...  # мертв
+            elif self.alive and player.bonus_on:
                 self.animated_object.start_frame = 9  # под бафом
             else:
-                self.animated_object.start_frame = (self.direction + 1) * 2  # потому что 0 - idle
+                self.animated_object.start_frame = (self.direction + 1) * 2  # +1 потому что 0 - idle
 
             self.animated_object.update()
+
+            if not self.alive:  # настройка скорости призрака
+                # быстрая, если мертв
+                self.move_var = [(0, self.speed[1]), (0, -self.speed[1]),
+                                 (-self.speed[1], 0), (self.speed[1], 0)]
+            else:
+                # обычная, если жив
+                self.move_var = [(0, self.speed[0]), (0, -self.speed[0]),
+                                 (-self.speed[0], 0), (self.speed[0], 0)]
 
             for i in range(4):  # движение
                 if self.direction == i and self.turns_allowed[i]:
@@ -366,9 +409,9 @@ if __name__ == '__main__':
 
 
     class VioletGhost(Ghost):
-        # предпочитает преследование игрока
+        # быстрее других призраков и замечает игрока, если он далеко
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3)
+            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3, 0)
             self.turns = [3, 1, 0, 2]
 
         def choose_direction(self):
@@ -422,7 +465,7 @@ if __name__ == '__main__':
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
-        def escape_direction(self):
+        def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 for id in self.turns:
@@ -459,8 +502,9 @@ if __name__ == '__main__':
 
 
     class PinkGhost(Ghost):
+        # медленнее других призраков, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3)
+            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3, 70)
             self.turns = [2, 1, 0, 3]
 
         def choose_direction(self):
@@ -514,7 +558,7 @@ if __name__ == '__main__':
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
-        def escape_direction(self):
+        def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 for id in self.turns:
@@ -551,8 +595,9 @@ if __name__ == '__main__':
 
 
     class OrangeGhost(Ghost):
+        # обычная скорость, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED)
+            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED, 120)
             self.turns = [0, 2, 1, 3]
 
         def choose_direction(self):
@@ -606,7 +651,7 @@ if __name__ == '__main__':
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
-        def escape_direction(self):
+        def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 for id in self.turns:
@@ -643,8 +688,9 @@ if __name__ == '__main__':
 
 
     class BlueGhost(Ghost):
+        # обычная скорость, замечает игрока, если он очень близко
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED)
+            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED, 180)
             self.turns = [3, 0, 2, 1]
 
         def choose_direction(self):
@@ -698,7 +744,7 @@ if __name__ == '__main__':
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
-        def escape_direction(self):
+        def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 for id in self.turns:
@@ -847,6 +893,7 @@ if __name__ == '__main__':
 
     show_overlay()
 
+    screen.blit(font.render("READY!", True, 'yellow'), (tile_size * 12.5, tile_size * 17))
     pygame.display.flip()
     pygame.time.wait(3000)  # ждем 3 секунды перед началом игры
 
