@@ -241,6 +241,7 @@ if __name__ == '__main__':
 
             self.turns_allowed = [False, False, False, False]
             self.turns_allowed[start_direction] = True
+            self.blocked_turns = [1, 0, 3, 2]
 
             self.target = None
 
@@ -315,14 +316,13 @@ if __name__ == '__main__':
             pos_x = self.rect.x + self.rect.width // 2
             pos_y = self.rect.y + self.rect.height // 2
             pogr = tile_size // 2 + 1
-
-            if self.direction == 1 and Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_' and \
-                    self.inbox:
+            if Level[(pos_y - pogr) // tile_size][pos_x // tile_size] == '_':
                 self.turns_allowed[1] = True  # когда вылезают из коробки
 
             # движение
             pogr = 5
             # если почти в центре, то не двигаемся
+            print(self.__class__, abs(self.rect.x - gate.rect.x), self.turns_allowed)
             if abs(self.rect.x - gate.rect.x) > pogr:
                 if self.rect.x < gate.rect.x and self.turns_allowed[3]:
                     self.direction = 3
@@ -337,8 +337,7 @@ if __name__ == '__main__':
             pos_y = self.rect.y + self.rect.height // 2
             pogr = tile_size // 2 + 1
 
-            if self.direction == 0 and Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and \
-                    not self.alive:
+            if Level[(pos_y + pogr) // tile_size][pos_x // tile_size] == '_' and not self.alive:
                 self.turns_allowed[0] = True  # когда возвращаются домой после смерти
 
             # движение
@@ -412,6 +411,7 @@ if __name__ == '__main__':
         # быстрее других призраков и замечает игрока, если он далеко
         def __init__(self, pos_x, pos_y):
             super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3, 0)
+            self.turns_list = [3, 3, 3, 1, 1, 1, 0, 0, 2, 2]
             self.turns = [3, 1, 0, 2]
 
         def choose_direction(self):
@@ -462,6 +462,12 @@ if __name__ == '__main__':
                         elif self.turns_allowed[id] and id == 2 and self.direction != 3:
                             self.direction = 2
                             break
+
+                    '''turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn'''
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -505,6 +511,7 @@ if __name__ == '__main__':
         # медленнее других призраков, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
             super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3, 70)
+            self.turns_list = [2, 2, 2, 1, 1, 1, 0, 0, 3, 3]
             self.turns = [2, 1, 0, 3]
 
         def choose_direction(self):
@@ -555,6 +562,12 @@ if __name__ == '__main__':
                         elif self.turns_allowed[id] and id == 3 and self.direction != 2:
                             self.direction = 3
                             break
+
+                    '''turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn'''
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -598,6 +611,7 @@ if __name__ == '__main__':
         # обычная скорость, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
             super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED, 120)
+            self.turns_list = [0, 0, 0, 2, 2, 2, 1, 1, 3, 3]
             self.turns = [0, 2, 1, 3]
 
         def choose_direction(self):
@@ -648,6 +662,12 @@ if __name__ == '__main__':
                         elif self.turns_allowed[id] and id == 3 and self.direction != 2:
                             self.direction = 3
                             break
+
+                    '''turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn'''
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -691,6 +711,7 @@ if __name__ == '__main__':
         # обычная скорость, замечает игрока, если он очень близко
         def __init__(self, pos_x, pos_y):
             super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED, 180)
+            self.turns_list = [3, 3, 3, 0, 0, 0, 2, 2, 1, 1]
             self.turns = [3, 0, 2, 1]
 
         def choose_direction(self):
@@ -741,6 +762,12 @@ if __name__ == '__main__':
                         elif self.turns_allowed[id] and id == 2 and self.direction != 3:
                             self.direction = 2
                             break
+
+                    '''turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn'''
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
