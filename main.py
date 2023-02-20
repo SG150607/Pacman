@@ -78,6 +78,65 @@ if __name__ == '__main__':
                 (30 + i * HP_size, height - 1.5 * HP_size))
 
 
+    def restart():  # перезагружаем уровень(после смерти пакмена)
+        screen.fill((0, 0, 0))
+
+        '''ДВИГАЕМ ОБЪЕКТЫ НА НАЧАЛЬНУЮ ПОЗИЦИЮ'''
+
+        # игрок
+        player.rect = pygame.rect.Rect(tile_size * 13, tile_size * 19, tile_size, tile_size)
+        player.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 19, tile_size, tile_size)
+
+        # фиолетовый призрак
+        violet_ghost.rect = pygame.rect.Rect(tile_size * 13, tile_size * 13, tile_size, tile_size)
+        violet_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 13, tile_size, tile_size)
+
+        # розовый призрак
+        pink_ghost.rect = pygame.rect.Rect(tile_size * 13, tile_size * 16, tile_size, tile_size)
+        pink_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 16, tile_size, tile_size)
+
+        # оранжевый призрак
+        orange_ghost.rect = pygame.rect.Rect(tile_size * 15, tile_size * 16, tile_size, tile_size)
+        orange_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 15, tile_size * 16, tile_size, tile_size)
+
+        # синий призрак
+        blue_ghost.rect = pygame.rect.Rect(tile_size * 11, tile_size * 16, tile_size, tile_size)
+        blue_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 11, tile_size * 16, tile_size, tile_size)
+
+        print(player.rect, violet_ghost.rect, pink_ghost.rect, orange_ghost.rect, blue_ghost.rect)
+        print([player.rect.x // tile_size, player.rect.y // tile_size],
+              [violet_ghost.rect.x // tile_size, violet_ghost.rect.y // tile_size],
+              [pink_ghost.rect.x // tile_size, pink_ghost.rect.y // tile_size],
+              [orange_ghost.rect.x // tile_size, orange_ghost.rect.y // tile_size],
+              [blue_ghost.rect.x // tile_size, blue_ghost.rect.y // tile_size])
+
+        all_sprites.draw(screen)
+
+        points.draw(screen)
+        bonuses.draw(screen)
+
+        player.update()
+
+        violet_ghost.target = player
+        pink_ghost.target = gate
+        blue_ghost.target = gate
+        orange_ghost.target = gate
+        violet_ghost.update()
+        pink_ghost.update()
+        blue_ghost.update()
+        orange_ghost.update()
+
+        show_overlay()
+
+        screen.blit(font.render("READY!", True, 'yellow'), (tile_size * 12.5, tile_size * 17))
+        pygame.display.flip()
+        pygame.time.wait(3000)  # ждем 3 секунды перед началом игры
+
+
+    def game_over():  # если пакмен потерял все жизни
+        ...
+
+
     '''КЛАССЫ'''
 
 
@@ -224,15 +283,31 @@ if __name__ == '__main__':
                 self.bonus_on = False
                 self.eaten_ghousts = [False, False, False, False]
 
+            for id, ghost in enumerate([violet_ghost, pink_ghost, orange_ghost, blue_ghost]):
+                # сталкиваемся, если маленькое расстоние
+                if ((self.rect.x - ghost.rect.x) ** 2 + (self.rect.y - ghost.rect.y) ** 2) ** 0.5 < tile_size:
+                    if self.bonus_on and not self.eaten_ghousts[id]:  # если действует бонус - умирает призрак
+                        ghost.alive = False
+                        self.eaten_ghousts[id] = True
+                        # получаем очки пропорционально съеденному количеству призраков
+                        global SCORE
+                        SCORE += len([ghosty for ghosty in self.eaten_ghousts if ghosty]) * 200
+                    else:  # иначе - умирает пакмен
+                        self.lives -= 1
+                        restart()
+
+            if not self.lives:  # если потеряли все жизни
+                game_over()
+
 
     class Ghost:
         def __init__(self, image, pos_x, pos_y, start_direction, inbox, speed, escape_con):
-            self.image = load_image(image, (tile_size * 11, tile_size))
+            self.image = load_image(image, (tile_size * 10, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
 
             # 0 - idle; 1 - down; 2 - up; 3 - left; 4 - right; 5 - dead
-            self.animated_object = AnimatedSprite(self.image, 11, 1, tile_size * pos_x, tile_size * pos_y)
+            self.animated_object = AnimatedSprite(self.image, 10, 1, tile_size * pos_x, tile_size * pos_y)
             self.animated_object.start_frame = start_direction * 2
 
             self.direction = start_direction
@@ -322,7 +397,6 @@ if __name__ == '__main__':
             # движение
             pogr = 5
             # если почти в центре, то не двигаемся
-            print(self.__class__, abs(self.rect.x - gate.rect.x), self.turns_allowed)
             if abs(self.rect.x - gate.rect.x) > pogr:
                 if self.rect.x < gate.rect.x and self.turns_allowed[3]:
                     self.direction = 3
@@ -376,12 +450,13 @@ if __name__ == '__main__':
                 # дошли до стены / идея: когда есть несколько вариантов направления и призрак НЕ в коробке
                 self.choose_direction()
 
-            if not self.alive:  # картинка призрака
-                self.animated_object.start_frame = ...  # мертв
+            '''НЕ ЗАБУДЬ ПОМЕНЯТЬ РАЗМЕРЫ/КОЛИЧЕСТВО КАДРОВ НА 30 ПРИ ИНИЦИАЛИЗАЦИИ'''
+            if not self.alive:  # картинка призрака (по 10 спрайтов на каждое состояние), +1 потому что 0 - idle
+                self.animated_object.start_frame = (self.direction + 1) * 2  # + 20  # мертв
             elif self.alive and player.bonus_on:
-                self.animated_object.start_frame = 9  # под бафом
+                self.animated_object.start_frame = (self.direction + 1) * 2  # + 10  # под бафом
             else:
-                self.animated_object.start_frame = (self.direction + 1) * 2  # +1 потому что 0 - idle
+                self.animated_object.start_frame = (self.direction + 1) * 2  # обычный
 
             self.animated_object.update()
 
@@ -862,7 +937,6 @@ if __name__ == '__main__':
     walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
     bonuses = pygame.sprite.Group()
-    ghosts = pygame.sprite.Group()
 
     '''ГЕНЕРАЦИЯ УРОВНЯ'''
 
@@ -901,22 +975,9 @@ if __name__ == '__main__':
     player, violet_ghost, pink_ghost, blue_ghost, orange_ghost, gate = generate_level(load_level('map.txt'))
     Level = load_level('map.txt')
 
-    running = True
     all_sprites.draw(screen)
-
     points.draw(screen)
     bonuses.draw(screen)
-
-    player.update()
-
-    violet_ghost.target = player
-    pink_ghost.target = gate
-    blue_ghost.target = gate
-    orange_ghost.target = gate
-    violet_ghost.update()
-    pink_ghost.update()
-    blue_ghost.update()
-    orange_ghost.update()
 
     show_overlay()
 
@@ -924,6 +985,7 @@ if __name__ == '__main__':
     pygame.display.flip()
     pygame.time.wait(3000)  # ждем 3 секунды перед началом игры
 
+    running = True
     while running:
         clock.tick(FPS)
         screen.fill((0, 0, 0))
@@ -950,6 +1012,12 @@ if __name__ == '__main__':
         orange_ghost.update()
         show_overlay()
         pygame.display.flip()
+        print(player.rect, violet_ghost.rect, pink_ghost.rect, orange_ghost.rect, blue_ghost.rect)
+        print([player.rect.x // tile_size, player.rect.y // tile_size],
+              [violet_ghost.rect.x // tile_size, violet_ghost.rect.y // tile_size],
+              [pink_ghost.rect.x // tile_size, pink_ghost.rect.y // tile_size],
+              [orange_ghost.rect.x // tile_size, orange_ghost.rect.y // tile_size],
+              [blue_ghost.rect.x // tile_size, blue_ghost.rect.y // tile_size])
     with open('data/best_score', "w", encoding='utf8') as file:
         file.write(str(BEST_SCORE))
     pygame.quit()
