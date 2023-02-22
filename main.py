@@ -60,62 +60,96 @@ if __name__ == '__main__':
 
     def show_overlay():  # визуалки
         UP_text = font.render("1UP", True, 'white')
-        screen.blit(UP_text, (50, 8))
+        screen.blit(UP_text, (2 * tile_size, round(0.5 * tile_size)))
         score_text = font.render(f"{SCORE}", True, 'white')
-        screen.blit(score_text, (50, 38))
+        screen.blit(score_text, (2 * tile_size, round(1.5 * tile_size)))
 
         highest_score_text = font.render("HIGH SCORE", True, 'white')
-        screen.blit(highest_score_text, (300, 8))
+        screen.blit(highest_score_text, (12 * tile_size, round(0.5 * tile_size)))
         best_score_text = font.render(f"{BEST_SCORE}", True, 'white')
-        screen.blit(best_score_text, (300, 38))
+        screen.blit(best_score_text, (12 * tile_size, round(1.5 * tile_size)))
 
         if player.bonus_on:  # отображаем кружочек если действует бонус (пока для самопроверки, тк нет врагов)
-            pygame.draw.circle(screen, pygame.Color('yellow'), (35, 51), 8)
+            pygame.draw.circle(screen, pygame.Color('yellow'), (round(1.5 * tile_size), 2 * tile_size),
+                               round(0.5 * tile_size))
 
         for i in range(player.lives - 1):  # отображается на 1 жизнь меньше
             screen.blit(load_image('characters/pacman.png', (HP_size * 8, HP_size)).subsurface(
                 pygame.Rect((4 * HP_size, 0), (HP_size, HP_size))),
-                (30 + i * HP_size, height - 1.5 * HP_size))
+                (tile_size + i * HP_size, height - 1.3 * HP_size))
 
 
-    def restart():  # перезагружаем уровень(после смерти пакмена)
+    def restart(full=False):  # перезагружаем уровень
+        global player, violet_ghost, pink_ghost, blue_ghost, orange_ghost, gate, Level
         screen.fill((0, 0, 0))
+        if full:  # полностью сбрасываем уровень
 
-        '''ДВИГАЕМ ОБЪЕКТЫ НА НАЧАЛЬНУЮ ПОЗИЦИЮ'''
+            # очищаем группы спрайтов
+            ghosts.empty()
+            players_anim_obj.empty()
+            walls.empty()
+            points.empty()
+            bonuses.empty()
+
+            # заново заргружаем уровень
+            player, violet_ghost, pink_ghost, blue_ghost, orange_ghost, gate = generate_level(load_level('map.txt'))
+            Level = load_level('map.txt')
+
+        '''ДВИГАЕМ ОБЪЕКТЫ НА НАЧАЛЬНУЮ ПОЗИЦИЮ И ВСЕ СБРАСЫВАЕМ'''
 
         # игрок
         player.rect = pygame.rect.Rect(tile_size * 13, tile_size * 19, tile_size, tile_size)
         player.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 19, tile_size, tile_size)
+        player.alive = True
+        player.bonus_on = False
+
+        # призраки
+        ghosts.empty()  # создаем новые объекты, так что очищаем группу
 
         # фиолетовый призрак
         violet_ghost.rect = pygame.rect.Rect(tile_size * 13, tile_size * 13, tile_size, tile_size)
-        violet_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 13, tile_size, tile_size)
+        violet_ghost.animated_object = AnimatedSprite(ghosts, violet_ghost.image, 30, 1, tile_size * 13, tile_size * 13)
+        violet_ghost.animated_object.start_frame = (violet_ghost.direction + 1) * 2
+        violet_ghost.move_var = [(0, violet_ghost.speed[0]), (0, -violet_ghost.speed[0]),
+                                 (-violet_ghost.speed[0], 0), (violet_ghost.speed[0], 0)]
 
         # розовый призрак
         pink_ghost.rect = pygame.rect.Rect(tile_size * 13, tile_size * 16, tile_size, tile_size)
-        pink_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 13, tile_size * 16, tile_size, tile_size)
+        pink_ghost.animated_object = AnimatedSprite(ghosts, pink_ghost.image, 30, 1, tile_size * 13, tile_size * 16)
+        pink_ghost.animated_object.start_frame = (pink_ghost.direction + 1) * 2
+        pink_ghost.move_var = [(0, pink_ghost.speed[0]), (0, -pink_ghost.speed[0]),
+                               (-pink_ghost.speed[0], 0), (pink_ghost.speed[0], 0)]
 
         # оранжевый призрак
         orange_ghost.rect = pygame.rect.Rect(tile_size * 15, tile_size * 16, tile_size, tile_size)
-        orange_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 15, tile_size * 16, tile_size, tile_size)
+        orange_ghost.animated_object = AnimatedSprite(ghosts, orange_ghost.image, 30, 1, tile_size * 15, tile_size * 16)
+        orange_ghost.animated_object.start_frame = (orange_ghost.direction + 1) * 2
+        orange_ghost.move_var = [(0, orange_ghost.speed[0]), (0, -orange_ghost.speed[0]),
+                                 (-orange_ghost.speed[0], 0), (orange_ghost.speed[0], 0)]
 
         # синий призрак
         blue_ghost.rect = pygame.rect.Rect(tile_size * 11, tile_size * 16, tile_size, tile_size)
-        blue_ghost.animated_object.rect = pygame.rect.Rect(tile_size * 11, tile_size * 16, tile_size, tile_size)
+        blue_ghost.animated_object = AnimatedSprite(ghosts, blue_ghost.image, 30, 1, tile_size * 11, tile_size * 16)
+        blue_ghost.animated_object.start_frame = (blue_ghost.direction + 1) * 2
+        blue_ghost.move_var = [(0, blue_ghost.speed[0]), (0, -blue_ghost.speed[0]),
+                               (-blue_ghost.speed[0], 0), (blue_ghost.speed[0], 0)]
 
-        print(player.rect, violet_ghost.rect, pink_ghost.rect, orange_ghost.rect, blue_ghost.rect)
+        for ghost in [violet_ghost, pink_ghost, orange_ghost, blue_ghost]:  # оживляем всех призраков
+            ghost.alive = True
+
+        '''print(player.rect, violet_ghost.rect, pink_ghost.rect, orange_ghost.rect, blue_ghost.rect)
         print([player.rect.x // tile_size, player.rect.y // tile_size],
               [violet_ghost.rect.x // tile_size, violet_ghost.rect.y // tile_size],
               [pink_ghost.rect.x // tile_size, pink_ghost.rect.y // tile_size],
               [orange_ghost.rect.x // tile_size, orange_ghost.rect.y // tile_size],
-              [blue_ghost.rect.x // tile_size, blue_ghost.rect.y // tile_size])
+              [blue_ghost.rect.x // tile_size, blue_ghost.rect.y // tile_size])'''
 
-        all_sprites.draw(screen)
-
+        walls.draw(screen)
         points.draw(screen)
         bonuses.draw(screen)
 
         player.update()
+        players_anim_obj.draw(screen)
 
         violet_ghost.target = player
         pink_ghost.target = gate
@@ -125,6 +159,7 @@ if __name__ == '__main__':
         pink_ghost.update()
         blue_ghost.update()
         orange_ghost.update()
+        ghosts.draw(screen)
 
         show_overlay()
 
@@ -134,15 +169,44 @@ if __name__ == '__main__':
 
 
     def game_over():  # если пакмен потерял все жизни
-        ...
+        global running
+        running = False
+
+        screen.fill(pygame.Color('black'))
+
+        # отрисовываем карту
+        walls.draw(screen)
+        points.draw(screen)
+        bonuses.draw(screen)
+
+        show_overlay()
+
+        # фразу проигрыша
+        lose_text = font.render(f"GAME OVER", True, 'red')
+        screen.blit(lose_text, (11.5 * tile_size, 17 * tile_size))
+
+        # отрисовываем
+        pygame.display.flip()
+
+        lose = True
+        while lose:  # новый цикл
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    lose = False
+        pygame.quit()
+
+
+    def win():  # если съели все точки
+        # анимация с картой(change на белый и обратно)
+        restart(full=True)
 
 
     '''КЛАССЫ'''
 
 
     class AnimatedSprite(pygame.sprite.Sprite):
-        def __init__(self, sheet, columns, rows, x, y):
-            super().__init__(all_sprites)
+        def __init__(self, group, sheet, columns, rows, x, y):
+            super().__init__(group)
             self.rect = pygame.Rect(x, y, 0, 0)
             self.frames = []
             self.cut_sheet(sheet, columns, rows)
@@ -164,11 +228,14 @@ if __name__ == '__main__':
 
     class Player:
         def __init__(self, pos_x, pos_y):
+            self.alive = True
+
             self.image = load_image('characters/pacman.png', (tile_size * 8, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
 
-            self.animated_object = AnimatedSprite(self.image, 8, 1, tile_size * pos_x, tile_size * pos_y)
+            self.animated_object = AnimatedSprite(players_anim_obj, self.image, 8, 1,
+                                                  tile_size * pos_x, tile_size * pos_y)
 
             self.direction = 0
             self.move_var = [(0, SPEED), (0, -SPEED), (-SPEED, 0), (SPEED, 0)]
@@ -283,31 +350,31 @@ if __name__ == '__main__':
                 self.bonus_on = False
                 self.eaten_ghousts = [False, False, False, False]
 
+            # столкновение с призраками
             for id, ghost in enumerate([violet_ghost, pink_ghost, orange_ghost, blue_ghost]):
                 # сталкиваемся, если маленькое расстоние
                 if ((self.rect.x - ghost.rect.x) ** 2 + (self.rect.y - ghost.rect.y) ** 2) ** 0.5 < tile_size:
-                    if self.bonus_on and not self.eaten_ghousts[id]:  # если действует бонус - умирает призрак
+                    if self.bonus_on and ghost.alive and ghost.under_effect:  # если действует бонус - умирает призрак
                         ghost.alive = False
+                        ghost.under_effect = False
                         self.eaten_ghousts[id] = True
                         # получаем очки пропорционально съеденному количеству призраков
                         global SCORE
-                        SCORE += len([ghosty for ghosty in self.eaten_ghousts if ghosty]) * 200
-                    else:  # иначе - умирает пакмен
+                        SCORE += len([ghost_ for ghost_ in self.eaten_ghousts if ghost_]) * 200
+                    elif not self.bonus_on:  # иначе - умирает пакмен
                         self.lives -= 1
-                        restart()
-
-            if not self.lives:  # если потеряли все жизни
-                game_over()
+                        self.alive = False
 
 
     class Ghost:
-        def __init__(self, image, pos_x, pos_y, start_direction, inbox, speed, escape_con):
-            self.image = load_image(image, (tile_size * 10, tile_size))
+        def __init__(self, anim_obj_group, image, pos_x, pos_y, start_direction, inbox, speed, escape_con):
+            self.image = load_image(image, (tile_size * 30, tile_size))
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
             self.rect.width = tile_size
 
             # 0 - idle; 1 - down; 2 - up; 3 - left; 4 - right; 5 - dead
-            self.animated_object = AnimatedSprite(self.image, 10, 1, tile_size * pos_x, tile_size * pos_y)
+            self.animated_object = AnimatedSprite(anim_obj_group, self.image, 30, 1,
+                                                  tile_size * pos_x, tile_size * pos_y)
             self.animated_object.start_frame = start_direction * 2
 
             self.direction = start_direction
@@ -316,13 +383,15 @@ if __name__ == '__main__':
 
             self.turns_allowed = [False, False, False, False]
             self.turns_allowed[start_direction] = True
-            self.blocked_turns = [1, 0, 3, 2]
+            self.blocked_turns = []  # у каждого призрака своя логика движения и свой blocked_turns
 
             self.target = None
 
             self.alive = True
             self.inbox = inbox
             self.escape_con = escape_con
+
+            self.under_effect = False  # находиться ли призрак под действием бонуса
 
         def check_position(self):  # проверка возможности движения + определяем inbox
             # 0 - down; 1 - up; 2 - left; 3 - right
@@ -450,15 +519,19 @@ if __name__ == '__main__':
                 # дошли до стены / идея: когда есть несколько вариантов направления и призрак НЕ в коробке
                 self.choose_direction()
 
-            '''НЕ ЗАБУДЬ ПОМЕНЯТЬ РАЗМЕРЫ/КОЛИЧЕСТВО КАДРОВ НА 30 ПРИ ИНИЦИАЛИЗАЦИИ'''
             if not self.alive:  # картинка призрака (по 10 спрайтов на каждое состояние), +1 потому что 0 - idle
-                self.animated_object.start_frame = (self.direction + 1) * 2  # + 20  # мертв
+                self.animated_object.start_frame = (self.direction + 1) * 2 + 20  # мертв
             elif self.alive and player.bonus_on:
-                self.animated_object.start_frame = (self.direction + 1) * 2  # + 10  # под бафом
+                self.animated_object.start_frame = (self.direction + 1) * 2 + 10  # под бафом
+                self.under_effect = True
             else:
                 self.animated_object.start_frame = (self.direction + 1) * 2  # обычный
+                self.under_effect = False
 
             self.animated_object.update()
+
+            if self.inbox:  # если дома, то живы
+                self.alive = True
 
             if not self.alive:  # настройка скорости призрака
                 # быстрая, если мертв
@@ -481,103 +554,64 @@ if __name__ == '__main__':
                 self.rect.x = width - 3
                 self.animated_object.rect.x = width - 3
 
+            # print(self.__class__, self.direction)
+
 
     class VioletGhost(Ghost):
         # быстрее других призраков и замечает игрока, если он далеко
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3, 0)
+            super().__init__(ghosts, 'characters/ghost_violet.png', pos_x, pos_y, 3, False, SPEED + 0.3, 0)
             self.turns_list = [3, 3, 3, 1, 1, 1, 0, 0, 2, 2]
             self.turns = [3, 1, 0, 2]
+            self.blocked_turns = [2, 0, 1, 3]
 
         def choose_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 8 and (
                         self.rect.y - self.target.rect[0]) // tile_size < 8:  # если цель близко
-                    for id in self.turns:
-                        if self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 3 and \
-                                self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 1 and \
-                                self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 0 and \
-                                self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 2 and \
-                                self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                else:
-                    for id in self.turns:
-                        if self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
+                    if self.rect.x < self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                        self.direction = 3
+                    elif self.rect.y > self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                        self.direction = 1
+                    elif self.rect.y < self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                        self.direction = 0
+                    elif self.rect.x > self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                        self.direction = 2
+                    else:
+                        turn = random.choice(self.turns_list)
+                        # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                        while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                            turn = random.choice(self.turns)
+                        self.direction = turn
 
-                    '''turn = random.choice(self.turns_list)
+                else:
+                    turn = random.choice(self.turns)
                     # если не можем идти в то направление, или выполняем разворот, что призраки не могут
                     while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
                         turn = random.choice(self.turns_list)
-                    self.direction = turn'''
+                    self.direction = turn
+
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
         def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
-                for id in self.turns:
-                    if self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
-                            self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
-                            self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
-                            self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
-                            self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                        self.direction = 2
-                        break
+                if self.rect.x > self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                    self.direction = 3
+                elif self.rect.y < self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                    self.direction = 1
+                elif self.rect.y > self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                    self.direction = 0
+                elif self.rect.x < self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                    self.direction = 2
+                else:
+                    turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -585,99 +619,56 @@ if __name__ == '__main__':
     class PinkGhost(Ghost):
         # медленнее других призраков, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3, 70)
+            super().__init__(ghosts, 'characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.3, 70)
             self.turns_list = [2, 2, 2, 1, 1, 1, 0, 0, 3, 3]
             self.turns = [2, 1, 0, 3]
+            self.blocked_turns = [3, 0, 1, 2]
 
         def choose_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 7 and (
                         self.rect.y - self.target.rect[0]) // tile_size < 7:  # если цель близко
-                    for id in self.turns:
-                        if self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 2 and \
-                                self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 1 and \
-                                self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 0 and \
-                                self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 3 and \
-                                self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
+                    if self.rect.x > self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                        self.direction = 2
+                    elif self.rect.y > self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                        self.direction = 1
+                    elif self.rect.y < self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                        self.direction = 0
+                    elif self.rect.x < self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                        self.direction = 3
+                    else:
+                        turn = random.choice(self.turns_list)
+                        # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                        while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                            turn = random.choice(self.turns_list)
+                        self.direction = turn
                 else:
-                    for id in self.turns:
-                        if self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-
-                    '''turn = random.choice(self.turns_list)
+                    turn = random.choice(self.turns_list)
                     # если не можем идти в то направление, или выполняем разворот, что призраки не могут
                     while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
                         turn = random.choice(self.turns_list)
-                    self.direction = turn'''
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
         def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
-                for id in self.turns:
-                    if self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
-                            self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
-                            self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
-                            self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
-                            self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                        self.direction = 3
-                        break
+                if self.rect.x < self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                    self.direction = 2
+                elif self.rect.y < self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                    self.direction = 1
+                elif self.rect.y > self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                    self.direction = 0
+                elif self.rect.x < self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                    self.direction = 3
+                else:
+                    turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -685,99 +676,56 @@ if __name__ == '__main__':
     class OrangeGhost(Ghost):
         # обычная скорость, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED, 120)
+            super().__init__(ghosts, 'characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED + 0.1, 120)
             self.turns_list = [0, 0, 0, 2, 2, 2, 1, 1, 3, 3]
             self.turns = [0, 2, 1, 3]
+            self.blocked_turns = [1, 3, 0, 2]
 
         def choose_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 7 and (
                         self.rect.y - self.target.rect[0]) // tile_size < 7:  # если цель близко
-                    for id in self.turns:
-                        if self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 0 and \
-                                self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 2 and \
-                                self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 1 and \
-                                self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 3 and \
-                                self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
+                    if self.rect.y < self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                        self.direction = 0
+                    elif self.rect.x > self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                        self.direction = 2
+                    elif self.rect.y > self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                        self.direction = 1
+                    elif self.rect.x < self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                        self.direction = 3
+                    else:
+                        turn = random.choice(self.turns_list)
+                        # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                        while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                            turn = random.choice(self.turns_list)
+                        self.direction = turn
                 else:
-                    for id in self.turns:
-                        if self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-
-                    '''turn = random.choice(self.turns_list)
+                    turn = random.choice(self.turns_list)
                     # если не можем идти в то направление, или выполняем разворот, что призраки не могут
                     while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
                         turn = random.choice(self.turns_list)
-                    self.direction = turn'''
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
         def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
-                for id in self.turns:
-                    if self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
-                            self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
-                            self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
-                            self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
-                            self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                        self.direction = 3
-                        break
+                if self.rect.y > self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                    self.direction = 0
+                elif self.rect.x < self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                    self.direction = 2
+                elif self.rect.y < self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                    self.direction = 1
+                elif self.rect.x > self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                    self.direction = 3
+                else:
+                    turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
@@ -785,106 +733,64 @@ if __name__ == '__main__':
     class BlueGhost(Ghost):
         # обычная скорость, замечает игрока, если он очень близко
         def __init__(self, pos_x, pos_y):
-            super().__init__('characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED, 180)
+            super().__init__(ghosts, 'characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED + 0.1, 180)
             self.turns_list = [3, 3, 3, 0, 0, 0, 2, 2, 1, 1]
             self.turns = [3, 0, 2, 1]
+            self.blocked_turns = [2, 1, 3, 0]
 
         def choose_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
                 if (self.rect.x - self.target.rect[1]) // tile_size < 5 and (
                         self.rect.y - self.target.rect[0]) // tile_size < 5:  # если цель близко
-                    for id in self.turns:
-                        if self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 3 and \
-                                self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 0 and \
-                                self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 1 and \
-                                self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 2 and \
-                                self.direction != 3:
-                            self.direction = 2
-                            break
-                        elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
-                else:
-                    for id in self.turns:
-                        if self.turns_allowed[id] and id == 3 and self.direction != 2:
-                            self.direction = 3
-                            break
-                        elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                            self.direction = 0
-                            break
-                        elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                            self.direction = 1
-                            break
-                        elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                            self.direction = 2
-                            break
+                    if self.rect.x < self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                        self.direction = 3
+                    elif self.rect.y < self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                        self.direction = 0
+                    elif self.rect.x > self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                        self.direction = 2
+                    elif self.rect.y > self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                        self.direction = 1
+                    else:
+                        turn = random.choice(self.turns_list)
+                        # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                        while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                            turn = random.choice(self.turns_list)
+                        self.direction = turn
 
-                    '''turn = random.choice(self.turns_list)
+                else:
+                    turn = random.choice(self.turns_list)
                     # если не можем идти в то направление, или выполняем разворот, что призраки не могут
                     while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
                         turn = random.choice(self.turns_list)
-                    self.direction = turn'''
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
         def flee_direction(self):
             # 0 - down; 1 - up; 2 - left; 3 - right
             if self.turns_allowed.count(True) > 1:
-                for id in self.turns:
-                    if self.turns_allowed[id] and self.rect.x > self.target.rect[1] and id == 3 and \
-                            self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and self.rect.y > self.target.rect[0] and id == 0 and \
-                            self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and self.rect.y < self.target.rect[0] and id == 1 and \
-                            self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and self.rect.x < self.target.rect[1] and id == 2 and \
-                            self.direction != 3:
-                        self.direction = 2
-                        break
-                    elif self.turns_allowed[id] and id == 3 and self.direction != 2:
-                        self.direction = 3
-                        break
-                    elif self.turns_allowed[id] and id == 0 and self.direction != 1:
-                        self.direction = 0
-                        break
-                    elif self.turns_allowed[id] and id == 1 and self.direction != 0:
-                        self.direction = 1
-                        break
-                    elif self.turns_allowed[id] and id == 2 and self.direction != 3:
-                        self.direction = 2
-                        break
+                if self.rect.x > self.target.rect[1] and self.turns_allowed[3] and self.direction != 2:
+                    self.direction = 3
+                elif self.rect.y > self.target.rect[0] and self.turns_allowed[0] and self.direction != 1:
+                    self.direction = 0
+                elif self.rect.x < self.target.rect[1] and self.turns_allowed[2] and self.direction != 3:
+                    self.direction = 2
+                elif self.rect.y < self.target.rect[0] and self.turns_allowed[1] and self.direction != 0:
+                    self.direction = 1
+                else:
+                    turn = random.choice(self.turns_list)
+                    # если не можем идти в то направление, или выполняем разворот, что призраки не могут
+                    while not self.turns_allowed[turn] or self.blocked_turns[turn] == self.direction:
+                        turn = random.choice(self.turns_list)
+                    self.direction = turn
             elif self.turns_allowed.count(True) == 1:
                 self.direction = self.turns_allowed.index(True)
 
 
     class Wall(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y, size_=(tile_size, tile_size)):
-            super().__init__(walls, all_sprites)
+            super().__init__(walls)
             self.image = load_image('field_builder/wall.png')
             self.rect = self.image.get_rect().move(size_[0] * pos_x, size_[1] * pos_y)
             self.mask = pygame.mask.from_surface(self.image)
@@ -933,7 +839,8 @@ if __name__ == '__main__':
     '''
 
     # группы спрайтов
-    all_sprites = pygame.sprite.Group()
+    ghosts = pygame.sprite.Group()
+    players_anim_obj = pygame.sprite.Group()
     walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
     bonuses = pygame.sprite.Group()
@@ -975,11 +882,14 @@ if __name__ == '__main__':
     player, violet_ghost, pink_ghost, blue_ghost, orange_ghost, gate = generate_level(load_level('map.txt'))
     Level = load_level('map.txt')
 
-    all_sprites.draw(screen)
+    walls.draw(screen)
     points.draw(screen)
     bonuses.draw(screen)
 
     show_overlay()
+
+    ghosts.draw(screen)
+    players_anim_obj.draw(screen)
 
     screen.blit(font.render("READY!", True, 'yellow'), (tile_size * 12.5, tile_size * 17))
     pygame.display.flip()
@@ -1001,23 +911,31 @@ if __name__ == '__main__':
                     player.move(3)
                 if event.key == pygame.K_RIGHT:
                     player.move(4)
-        all_sprites.draw(screen)
+        walls.draw(screen)
         points.draw(screen)
         if pygame.time.get_ticks() % 1000 < 500:
             bonuses.draw(screen)
+
+        players_anim_obj.draw(screen)
         player.update()
+        if not player.lives:  # если пакмен потерял все жизни, то КОНЕЦ ИГРЫ
+            game_over()
+            break
+        elif not player.alive:  # если игрок умер - перезагружаемся
+            restart()
+            continue
+        elif not points and not bonuses:  # если съели все точки, то ПОБЕДА (и перезапуск игры)
+            win()
+            continue
+
         violet_ghost.update()
         pink_ghost.update()
         blue_ghost.update()
         orange_ghost.update()
+        ghosts.draw(screen)
+
         show_overlay()
         pygame.display.flip()
-        print(player.rect, violet_ghost.rect, pink_ghost.rect, orange_ghost.rect, blue_ghost.rect)
-        print([player.rect.x // tile_size, player.rect.y // tile_size],
-              [violet_ghost.rect.x // tile_size, violet_ghost.rect.y // tile_size],
-              [pink_ghost.rect.x // tile_size, pink_ghost.rect.y // tile_size],
-              [orange_ghost.rect.x // tile_size, orange_ghost.rect.y // tile_size],
-              [blue_ghost.rect.x // tile_size, blue_ghost.rect.y // tile_size])
     with open('data/best_score', "w", encoding='utf8') as file:
         file.write(str(BEST_SCORE))
     pygame.quit()
