@@ -1,4 +1,3 @@
-import math
 import os
 import random
 import sys
@@ -77,6 +76,9 @@ if __name__ == '__main__':
             screen.blit(load_image('characters/pacman.png', (HP_size * 8, HP_size)).subsurface(
                 pygame.Rect((4 * HP_size, 0), (HP_size, HP_size))),
                 (tile_size + i * HP_size, height - 1.3 * HP_size))
+
+        for num, fruit in enumerate(player.eaten_fruits):  # отображаем фрукты съеденные игроком
+            screen.blit(fruit.image, (width - 1.3 * tile_size * (num + 1), height - 1.3 * tile_size))
 
 
     def restart(full=False):  # перезагружаем уровень
@@ -242,6 +244,8 @@ if __name__ == '__main__':
 
             self.lives = 3
 
+            self.eaten_fruits = []  # съеденные фрукты
+
         def move(self, direction):  # направление движения
             self.direction = direction - 1
             self.animated_object.start_frame = self.direction * 2
@@ -312,6 +316,9 @@ if __name__ == '__main__':
                     self.eaten_ghousts = [False, False, False, False]
                     for ghost in [violet_ghost, pink_ghost, orange_ghost, blue_ghost]:
                         ghost.revived = False
+                if Level[mid_y // tile_size][mid_x // tile_size] == "F":
+                    Level[mid_y // tile_size][mid_x // tile_size] = ""
+                    SCORE += 100
 
                 for point in points:
                     if not Level[point.rect.y // tile_size][point.rect.x // tile_size]:
@@ -319,6 +326,11 @@ if __name__ == '__main__':
                 for bonus in bonuses:
                     if not Level[bonus.rect.y // tile_size][bonus.rect.x // tile_size]:
                         bonuses.remove(bonus)
+                for fruit in fruits:
+                    if not Level[fruit.rect.y // tile_size][fruit.rect.x // tile_size]:
+                        fruits.remove(fruit)
+                        self.eaten_fruits.append(fruit)
+                        fruit_list.clear()
 
             if SCORE > BEST_SCORE:  # если набрали рекордное кол-во очков
                 BEST_SCORE = SCORE
@@ -384,7 +396,7 @@ if __name__ == '__main__':
 
             self.alive = True
             self.inbox = inbox
-            self.escape_con = escape_con
+            self.escape_con = escape_con  # в игре 240 точек, когда указанное кол-во съедено, призрак покидает дом
 
             self.under_effect = False  # находиться ли призрак под действием бонуса
             self.revived = False
@@ -512,7 +524,7 @@ if __name__ == '__main__':
                 self.get_in_box()
             elif self.alive and player.bonus_on and not self.inbox:  # направление движения и выбор спрайта
                 self.flee_direction()
-            elif self.alive and self.inbox and SCORE >= self.escape_con:  # если в коробке и нужно выбраться
+            elif self.alive and self.inbox and 240 - len(points) >= self.escape_con:  # если в коробке и нужно выбраться
                 self.escape_box()
             else:
                 rect1 = self.rect.move(self.move_var[self.direction])  # квадрат,куда мы передвинемся
@@ -628,7 +640,7 @@ if __name__ == '__main__':
     class PinkGhost(Ghost):
         # медленнее других призраков, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__(ghosts, 'characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.1, 70)
+            super().__init__(ghosts, 'characters/ghost_pink.png', pos_x, pos_y, 1, True, SPEED - 0.1, 60)
             self.turns_list = [2, 2, 2, 1, 1, 1, 0, 0, 3, 3]
             self.turns = [2, 1, 0, 3]
 
@@ -685,7 +697,7 @@ if __name__ == '__main__':
     class OrangeGhost(Ghost):
         # обычная скорость, замечает игрока на нормальном расстоянии
         def __init__(self, pos_x, pos_y):
-            super().__init__(ghosts, 'characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED + 0.1, 120)
+            super().__init__(ghosts, 'characters/ghost_orange.png', pos_x, pos_y, 2, True, SPEED + 0.1, 40)
             self.turns_list = [0, 0, 0, 2, 2, 2, 1, 1, 3, 3]
             self.turns = [0, 2, 1, 3]
 
@@ -742,7 +754,7 @@ if __name__ == '__main__':
     class BlueGhost(Ghost):
         # обычная скорость, замечает игрока, если он очень близко
         def __init__(self, pos_x, pos_y):
-            super().__init__(ghosts, 'characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED + 0.1, 180)
+            super().__init__(ghosts, 'characters/ghost_blue.png', pos_x, pos_y, 2, True, SPEED + 0.1, 25)
             self.turns_list = [3, 3, 3, 0, 0, 0, 2, 2, 1, 1]
             self.turns = [3, 0, 2, 1]
 
@@ -800,7 +812,7 @@ if __name__ == '__main__':
     class Wall(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y, size_=(tile_size, tile_size)):
             super().__init__(walls)
-            self.image = load_image('field_builder/wall.png')
+            self.image = load_image('field_builder/wall_blue.png')
             self.rect = self.image.get_rect().move(size_[0] * pos_x, size_[1] * pos_y)
 
 
@@ -827,6 +839,24 @@ if __name__ == '__main__':
             self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
 
 
+    class Fruit(pygame.sprite.Sprite):
+        # фруктики - объекты за которые игрок может получить дополнительные очки
+        # за их съедение игрок получает 100 очков, как на 1-ом уровне игры (а у нас всего 1 уровень, так что ГЫЫ)
+        def __init__(self, pos_x, pos_y):
+            super().__init__(fruits)
+            self.fruit = random.choice(['fruit_banana', 'fruit_cherry', 'fruit_grapes',
+                                        'fruit_lemon', 'fruit_orange', 'fruit_peach',
+                                        'fruit_pear', 'fruit_tomato'])
+            self.image = load_image(f'fruits/{self.fruit}.png')
+            self.rect = self.image.get_rect().move(tile_size * pos_x, tile_size * pos_y)
+            self.life_time = random.choice([9 + i * 0.01 for i in range(100)])  # время которое фрукт проведет на поле
+            global Level
+            Level[pos_y][pos_x] = "F"  # отображаем на поле
+
+        def update(self):
+            self.life_time -= 0.001
+
+
     '''
     ---КАРТА---:
     
@@ -838,6 +868,7 @@ if __name__ == '__main__':
     # - стены
     + - точки
     0 - бонус(для поедания врагов)
+    F - место для фруктов
     / - порталы(коридор справа и слева карты для перемещения между краями)
     _ - "калитка" для призраков
     " " - пустая клетка
@@ -851,6 +882,9 @@ if __name__ == '__main__':
     walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
     bonuses = pygame.sprite.Group()
+    fruits = pygame.sprite.Group()
+
+    fruit_list = []
 
     '''ГЕНЕРАЦИЯ УРОВНЯ'''
 
@@ -922,6 +956,18 @@ if __name__ == '__main__':
         points.draw(screen)
         if pygame.time.get_ticks() % 1000 < 500:
             bonuses.draw(screen)
+
+        if len(points) == 170 and not len(fruit_list):  # первый фруктик
+            fruit_list.append(Fruit(13, 19))
+        elif len(points) == 70 and not len(fruit_list):  # второй фруктик
+            fruit_list.append(Fruit(13, 19))
+        for fruit in fruit_list:
+            fruit.update()
+            if fruit.life_time <= 0:  # если 'время жизни' истекло, то фрукт исчезает
+                fruit_list.remove(fruit)
+                fruits.remove(fruit)
+                Level[fruit.rect.y // tile_size][fruit.rect.x // tile_size] = ''
+        fruits.draw(screen)
 
         players_anim_obj.draw(screen)
         player.update()
