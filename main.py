@@ -192,7 +192,19 @@ if __name__ == '__main__':
 
 
     def win():  # если съели все точки
-        # анимация с картой(change на белый и обратно)
+        for i in range(7):  # фликерная анимация стен
+            if i % 2 == 1:
+                white_walls.draw(screen)
+            else:
+                walls.draw(screen)
+
+            # рисуем другие объекты
+            players_anim_obj.draw(screen)
+            ghosts.draw(screen)
+            show_overlay()
+
+            pygame.display.flip()
+            pygame.time.wait(600)
         restart(full=True)
 
 
@@ -816,6 +828,13 @@ if __name__ == '__main__':
             self.rect = self.image.get_rect().move(size_[0] * pos_x, size_[1] * pos_y)
 
 
+    class WhiteWall(pygame.sprite.Sprite):
+        def __init__(self, pos_x, pos_y, size_=(tile_size, tile_size)):
+            super().__init__(white_walls)
+            self.image = load_image('field_builder/wall_white.png')
+            self.rect = self.image.get_rect().move(size_[0] * pos_x, size_[1] * pos_y)
+
+
     class Gate(Wall):
         def __init__(self, pos_x, pos_y):
             super().__init__(pos_x, pos_y)
@@ -880,6 +899,7 @@ if __name__ == '__main__':
     ghosts = pygame.sprite.Group()
     players_anim_obj = pygame.sprite.Group()
     walls = pygame.sprite.Group()
+    white_walls = pygame.sprite.Group()
     points = pygame.sprite.Group()
     bonuses = pygame.sprite.Group()
     fruits = pygame.sprite.Group()
@@ -895,6 +915,7 @@ if __name__ == '__main__':
             for x in range(len(level[y])):
                 if level[y][x] == '#':
                     Wall(x, y)
+                    WhiteWall(x, y)
                 elif level[y][x] == '+':
                     Point(x, y)
                 elif level[y][x] == '0':
@@ -980,7 +1001,6 @@ if __name__ == '__main__':
         elif not points and not bonuses:  # если съели все точки, то ПОБЕДА (и перезапуск игры)
             win()
             continue
-
         violet_ghost.update()
         pink_ghost.update()
         blue_ghost.update()
